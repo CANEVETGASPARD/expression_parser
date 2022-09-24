@@ -26,74 +26,86 @@ defmodule ExpressionParser do
   end
 
   def add(nil, {char_class,char_value}) do
-    case char_class do
-      :opening_parenthesis -> {nil,nil,nil}
-      _ -> {char_value,nil,nil} #only variables and numbers will arrived till this step
-    end
+    {{char_class,char_value},nil,nil}
   end
   def add({left_tree,mid_element,right_tree},{char_class,char_value}) do
     case {char_class,mid_element} do
-      {:comparator, nil} -> {left_tree,char_value,right_tree}
-      {:comparator, _} -> {{left_tree,mid_element,right_tree},char_value,nil}
-      {:operator, nil} -> {left_tree,char_value,right_tree}
-      {:operator, _} -> cond do
-        String.match?(mid_element, ~r{!=|=|<=|<|>=|>}) -> {left_tree,mid_element,add(right_tree,{char_class,char_value})} #first level of importance
-        String.match?(char_value, ~r{\*|\/}) -> {left_tree,mid_element,{right_tree,char_value,nil}} #second level of importance
-        true -> {{left_tree,mid_element,right_tree},char_value,nil} #last level of importance (other operators)
+      {:comparator, nil} -> {left_tree,{char_class,char_value},right_tree}
+      {:comparator, _} -> {{left_tree,mid_element,right_tree},{char_class,char_value},nil}
+      {:operator, nil} -> {left_tree,{char_class,char_value},right_tree}
+      {:operator, {mid_element_atom,_}} -> cond do
+        mid_element_atom == :comparator -> case right_tree do
+          {_,_,_} ->{left_tree,mid_element,add(right_tree,{char_class,char_value})}
+          _ -> {left_tree,mid_element,{right_tree,{char_class,char_value},nil}}
+        end
+        String.match?(char_value, ~r{\*|\/}) -> {left_tree,mid_element,{right_tree,{char_class,char_value},nil}}
+        true -> {{left_tree,mid_element,right_tree},{char_class,char_value},nil}
       end
-      {:closing_parenthesis, _} -> {{left_tree,mid_element,right_tree},nil,nil}
-      {:opening_parenthesis, nil} -> {add(left_tree,{char_class,char_value}),mid_element,right_tree}
-      {:opening_parenthesis, _} -> {left_tree,mid_element,add(right_tree,{char_class,char_value})}
       {_, nil} -> case left_tree do
-        nil -> {char_value,mid_element,right_tree}
+        nil -> {{char_class,char_value},mid_element,right_tree}
         _ -> {add(left_tree,{char_class,char_value}),mid_element,right_tree}
       end
-      {_, _} -> case right_tree do
-        nil -> {left_tree,mid_element,char_value}
+      {_,_} -> case right_tree do
+        nil -> {left_tree,mid_element,{char_class,char_value}}
         _ -> {left_tree,mid_element,add(right_tree,{char_class,char_value})}
       end
     end
   end
-  def add(value,{_,char_value}) do #special case for operator. Is called when a comparator is in the midlle of the tree and a value (variable or number) is in the right tree
-    {value,char_value,nil}
+
+  def parse(tree,[]) do
+      tree
+    end
+  def parse(tree,[head|tail]) do
+    {validity_atom,validity_message} = check_validity(tree,head)
+    case validity_atom do
+      :error -> raise(validity_message)
+      _ -> parse(add(tree,head),tail)
+    end
   end
 
-  @error_message %{:comparator => %{:on_start => "can't start expression with a comparator", :after_opening_parenthesis => "can't put comparator just after opening parenthesis"},
-    :operator => %{:on_start => "can't start expression with an operator", :after_opening_parenthesis => "can't put operator just after opening parenthesis"},
-    :closing_parenthesis => %{:on_start => "can't start expression with a closing parenthesis", :after_opening_parenthesis => "can't put closing parenthesis just after opening parenthesis"}}
 
+  @error_message %{:on_start => %{
+      :comparator => "can't start expression with a comparator",
+      :operator => "can't start expression with an operator",
+    },
+    :after_variable_or_number => %{
+      :number => "can't put number just after number or variable",
+      :variable => "can't put variable just after number or variable",
+    },
+    :after_operator_or_comparator => %{
+      :comparator => "can't put comparator just after operator or comparator",
+      :operator => "can't put operator just after operator or comparator",
+    }
+  }
 
   def check_validity(_,{:illegal_char,_}) do
     {:error,"illegal char in the expression"}
   end
   def check_validity(nil,{char_class,_}) do
     cond do
-      Map.has_key?(@error_message,char_class) -> {:error,@error_message[char_class][:on_start]}
+      Map.has_key?(@error_message[:on_start],char_class) -> {:error,@error_message[:on_start][char_class]}
       true -> {nil,nil}
     end
-
   end
-  def check_validity({nil,nil,nil},{char_class,_}) do
+  def check_validity({_,nil,_},{char_class,_}) do
     cond do
-      Map.has_key?(@error_message,char_class) -> {:error,@error_message[char_class][:after_opening_parenthesis]}
+      Map.has_key?(@error_message[:after_variable_or_number],char_class) -> {:error,@error_message[:after_variable_or_number][char_class]}
       true -> {nil,nil}
     end
   end
-  def check_validity(_,_) do
-    {nil,nil}
+  def check_validity({_,_,nil},{char_class,_}) do
+    cond do
+      Map.has_key?(@error_message[:after_operator_or_comparator],char_class) -> {:error,@error_message[:after_operator_or_comparator][char_class] }
+      true -> {nil,nil}
+    end
   end
-
-  def parse(tree,[]) do
-    tree
-  end
-  def parse(tree,[{:closing_parenthesis,_}|[]]) do
-    tree
-  end
-  def parse(tree,[head|tail]) do
-    {validity_atom,validity_message} = check_validity(tree,head)
-    case validity_atom do
-      :error -> raise(validity_message)
-      _ -> parse(add(tree,head),tail)
+  def check_validity({_,_,right_tree},{char_class,char_value}) do
+    case right_tree do
+      {_,_,_} -> check_validity(right_tree,{char_class,char_value})
+      _ -> cond do
+        Map.has_key?(@error_message[:after_variable_or_number],char_class) -> {:error,@error_message[:after_variable_or_number][char_class]}
+        true -> {nil,nil}
+      end
     end
   end
 end
