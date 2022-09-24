@@ -27,20 +27,32 @@ defmodule ExpressionParserTest do
   end
 
   test "parse" do
-    simple_tokenized_char = ExpressionParser.tokenize(" ( 123 + 55) ")
-    assert ExpressionParser.parse(nil,simple_tokenized_char) == {"123","+","55"}
-    harder_tokenized_char = ExpressionParser.tokenize(" ( 123 + 55) <= 3500 ")
-    assert ExpressionParser.parse(nil,harder_tokenized_char) == {{"123","+","55"},"<=","3500"}
-    really_hard_tokenized_char = ExpressionParser.tokenize("( 123 + 55*y)/33 <= 3500 ")
-    assert ExpressionParser.parse(nil,really_hard_tokenized_char) == {{{"123","+",{"55","*","y"}},"/","33"},"<=","3500"}
-    really_hard_tokenized_char = ExpressionParser.tokenize("( 123 + 55 + y)/33 <= 3500 ")
-    assert ExpressionParser.parse(nil,really_hard_tokenized_char) == {{{{"123","+","55"},"+","y"},"/","33"},"<=","3500"}
-    really_hard_tokenized_char = ExpressionParser.tokenize("( 123 / 55*y)/33 <= 3500 ")
-    assert ExpressionParser.parse(nil,really_hard_tokenized_char) == {{{"123","/",{"55","*","y"}},"/","33"},"<=","3500"}
+    tokenized_char = ExpressionParser.tokenize(" ( 123 + 55) ")
+    assert ExpressionParser.parse(nil,tokenized_char) == {"123","+","55"}
+    tokenized_char = ExpressionParser.tokenize("( 123 + 55*y)/33 <= 3500 ")
+    assert ExpressionParser.parse(nil,tokenized_char) == {{{"123","+",{"55","*","y"}},"/","33"},"<=","3500"}
+    tokenized_char = ExpressionParser.tokenize("( 123 + 55 + y)/33 <= 3500 ")
+    assert ExpressionParser.parse(nil,tokenized_char) == {{{{"123","+","55"},"+","y"},"/","33"},"<=","3500"}
+    tokenized_char = ExpressionParser.tokenize("( 123 / 55*y)/33 <= 3500 ")
+    assert ExpressionParser.parse(nil,tokenized_char) == {{{"123","/",{"55","*","y"}},"/","33"},"<=","3500"}
+    tokenized_char = ExpressionParser.tokenize(" 123 + 55*3 + 5 <= 123 + 55*3 + 5 ")
+    assert ExpressionParser.parse(nil,tokenized_char) == {{{"123", "+", {"55", "*", "3"}}, "+", "5"}, "<=",{{"123", "+", {"55", "*", "3"}}, "+", "5"}}
   end
 
   test "parse error handling" do
     tokenized_char_with_illegal_char = ExpressionParser.tokenize(" ( 123 @ 55) ")
     assert_raise(RuntimeError, "illegal char in the expression", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_char) end)
+    tokenized_char_with_illegal_parenthesis = ExpressionParser.tokenize(") ( 123 + 55) ")
+    assert_raise(RuntimeError, "can't start expression with a closing parenthesis", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_parenthesis) end)
+    tokenized_char_with_illegal_parenthesis = ExpressionParser.tokenize("() 123 + 55) ")
+    assert_raise(RuntimeError, "can't put closing parenthesis just after opening parenthesis", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_parenthesis) end)
+    tokenized_char_with_illegal_comparator = ExpressionParser.tokenize("= ( 123 + 55) ")
+    assert_raise(RuntimeError, "can't start expression with a comparator", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_comparator) end)
+    tokenized_char_with_illegal_comparator = ExpressionParser.tokenize("(<= 123 + 55) ")
+    assert_raise(RuntimeError, "can't put comparator just after opening parenthesis", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_comparator) end)
+    tokenized_char_with_illegal_operator = ExpressionParser.tokenize("+ ( 123 + 55) ")
+    assert_raise(RuntimeError, "can't start expression with an operator", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_operator) end)
+    tokenized_char_with_illegal_operator = ExpressionParser.tokenize("(* 123 + 55) ")
+    assert_raise(RuntimeError, "can't put operator just after opening parenthesis", fn  -> ExpressionParser.parse(nil,tokenized_char_with_illegal_operator) end)
   end
 end
