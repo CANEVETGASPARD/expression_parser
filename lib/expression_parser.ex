@@ -58,23 +58,28 @@ defmodule ExpressionParser do
     {value,char_value,nil}
   end
 
-  def check_validity(_,{:illegal_char,_},_) do
+  @error_message %{:comparator => %{:on_start => "can't start expression with a comparator", :after_opening_parenthesis => "can't put comparator just after opening parenthesis"},
+    :operator => %{:on_start => "can't start expression with an operator", :after_opening_parenthesis => "can't put operator just after opening parenthesis"},
+    :closing_parenthesis => %{:on_start => "can't start expression with a closing parenthesis", :after_opening_parenthesis => "can't put closing parenthesis just after opening parenthesis"}}
+
+
+  def check_validity(_,{:illegal_char,_}) do
     {:error,"illegal char in the expression"}
   end
-  def check_validity(nil,{char_class,_},error_message_map) do
+  def check_validity(nil,{char_class,_}) do
     cond do
-      Map.has_key?(error_message_map,char_class) -> {:error,error_message_map[char_class][:on_start]}
+      Map.has_key?(@error_message,char_class) -> {:error,@error_message[char_class][:on_start]}
       true -> {nil,nil}
     end
 
   end
-  def check_validity({nil,nil,nil},{char_class,_},error_message_map) do
+  def check_validity({nil,nil,nil},{char_class,_}) do
     cond do
-      Map.has_key?(error_message_map,char_class) -> {:error,error_message_map[char_class][:after_opening_parenthesis]}
+      Map.has_key?(@error_message,char_class) -> {:error,@error_message[char_class][:after_opening_parenthesis]}
       true -> {nil,nil}
     end
   end
-  def check_validity(_,_,_) do
+  def check_validity(_,_) do
     {nil,nil}
   end
 
@@ -85,12 +90,7 @@ defmodule ExpressionParser do
     tree
   end
   def parse(tree,[head|tail]) do
-    error_message =
-      %{:comparator => %{:on_start => "can't start expression with a comparator", :after_opening_parenthesis => "can't put comparator just after opening parenthesis"},
-      :operator => %{:on_start => "can't start expression with an operator", :after_opening_parenthesis => "can't put operator just after opening parenthesis"},
-      :closing_parenthesis => %{:on_start => "can't start expression with a closing parenthesis", :after_opening_parenthesis => "can't put closing parenthesis just after opening parenthesis"}}
-
-    {validity_atom,validity_message} = check_validity(tree,head,error_message)
+    {validity_atom,validity_message} = check_validity(tree,head)
     case validity_atom do
       :error -> raise(validity_message)
       _ -> parse(add(tree,head),tail)
