@@ -3,7 +3,6 @@ defmodule ExpressionParser do
   Documentation for `ExpressionParser`.
   """
 
-  @spec tokenize(binary) :: nil | [binary | {integer, integer}]
   @doc """
 
   """
@@ -110,6 +109,8 @@ defmodule ExpressionParser do
       end
     end
   end
+
+  def eval(char_chain, var_table \\ %{}) #function header with predefined empty var table
 
   def eval(char_chain,var_table) do
     tokenize(char_chain)
