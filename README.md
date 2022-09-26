@@ -36,7 +36,7 @@ Then you will be able to try the tokenize, parse and eval function by following 
 
 **/!\ Disclaimer: As I said before, my parser function cannot handle parenthesis but my tokenize function do. Thus do not try to put parenthesis within char chain for eval and parse function but do not hesitate to do it for tokenize function.**
 
-- _tokenize_ function take a char chain as input and renturn the list of char chain elements.
+- _tokenize_ function take a char chain as input and return the list of char chain elements.
 
 ```console
 iex(1)> ExpressionParser.tokenize("30 > 50") 
