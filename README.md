@@ -71,5 +71,5 @@ If you want to contribute and fix my parenthesis problem, you can use mix test t
 project_loaction> mix test
 ```
 
-It will help you inspect the output of your new immplementations
+It will help you inspect the output of your new implementations
 
