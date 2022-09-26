@@ -26,30 +26,30 @@ defmodule ExpressionParserTest do
 
   test "parse" do
     tokenized_char = ExpressionParser.tokenize(" 123 + 55 ")
-    assert ExpressionParser.parse(tokenized_char,nil) == {{:number, "123"}, {:operator, "+"}, {:number, "55"}}
+    assert ExpressionParser.parse(tokenized_char) == {{:number, "123"}, {:operator, "+"}, {:number, "55"}}
     tokenized_char = ExpressionParser.tokenize("3*4 + 6 + 4*5 ")
-    assert ExpressionParser.parse(tokenized_char,nil) == {{{{:number, "3"}, {:operator, "*"}, {:number, "4"}},{:operator, "+"}, {:number, "6"}}, {:operator, "+"},{{:number, "4"}, {:operator, "*"}, {:number, "5"}}}
+    assert ExpressionParser.parse(tokenized_char) == {{{{:number, "3"}, {:operator, "*"}, {:number, "4"}},{:operator, "+"}, {:number, "6"}}, {:operator, "+"},{{:number, "4"}, {:operator, "*"}, {:number, "5"}}}
     tokenized_char = ExpressionParser.tokenize("3*4 + 6 + 4*5 <= 3*4 + 6 + 4*5")
-    assert ExpressionParser.parse(tokenized_char,nil) == {{{{{:number, "3"}, {:operator, "*"}, {:number, "4"}},{:operator, "+"}, {:number, "6"}}, {:operator, "+"},{{:number, "4"}, {:operator, "*"}, {:number, "5"}}},{:comparator, "<="},{{{{:number, "3"}, {:operator, "*"}, {:number, "4"}},{:operator, "+"}, {:number, "6"}}, {:operator, "+"},{{:number, "4"}, {:operator, "*"}, {:number, "5"}}}}
+    assert ExpressionParser.parse(tokenized_char) == {{{{{:number, "3"}, {:operator, "*"}, {:number, "4"}},{:operator, "+"}, {:number, "6"}}, {:operator, "+"},{{:number, "4"}, {:operator, "*"}, {:number, "5"}}},{:comparator, "<="},{{{{:number, "3"}, {:operator, "*"}, {:number, "4"}},{:operator, "+"}, {:number, "6"}}, {:operator, "+"},{{:number, "4"}, {:operator, "*"}, {:number, "5"}}}}
   end
 
   test "parse error handling" do
     tokenized_char_with_illegal_char = ExpressionParser.tokenize(" 123 @ 55 ")
-    assert_raise(RuntimeError, "illegal char in the expression", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_char,nil) end)
+    assert_raise(RuntimeError, "illegal char in the expression", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_char) end)
     tokenized_char_with_two_comparators = ExpressionParser.tokenize(" 123 = 4 <= 55 ")
-    assert_raise(RuntimeError, "can't have two comparators in one expression", fn  -> ExpressionParser.parse(tokenized_char_with_two_comparators,nil) end)
+    assert_raise(RuntimeError, "can't have two comparators in one expression", fn  -> ExpressionParser.parse(tokenized_char_with_two_comparators) end)
     tokenized_char_with_illegal_comparator = ExpressionParser.tokenize("= 123 + 55 ")
-    assert_raise(RuntimeError, "can't start expression with a comparator", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_comparator,nil) end)
+    assert_raise(RuntimeError, "can't start expression with a comparator", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_comparator) end)
     tokenized_char_with_illegal_comparator = ExpressionParser.tokenize(" 123 = + 55 ")
-    assert_raise(RuntimeError, "can't put operator just after operator or comparator", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_comparator,nil) end)
+    assert_raise(RuntimeError, "can't put operator just after operator or comparator", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_comparator) end)
     tokenized_char_with_illegal_oparator = ExpressionParser.tokenize("3*4 + 6 + 4*5 <= 3*4 + 6 + + 4*5")
-    assert_raise(RuntimeError, "can't put operator just after operator or comparator", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_oparator,nil) end)
+    assert_raise(RuntimeError, "can't put operator just after operator or comparator", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_oparator) end)
     tokenized_char_with_illegal_variable = ExpressionParser.tokenize("3*4 + 6 + 4*5 <= 3 y")
-    assert_raise(RuntimeError, "can't put variable just after number or variable", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_variable,nil) end)
+    assert_raise(RuntimeError, "can't put variable just after number or variable", fn  -> ExpressionParser.parse(tokenized_char_with_illegal_variable) end)
   end
 
   test "eval" do
-    assert ExpressionParser.eval("4<3",%{}) == false
+    assert ExpressionParser.eval("4<3") == false
     assert ExpressionParser.eval("x<z",%{"x"=>3,"z"=>10}) ==true
     assert ExpressionParser.eval("3*4 + 6 + 4*5 <= 3*y",%{"y"=>40}) == true
     assert ExpressionParser.eval("3*4 + 6 + 40/5 = 3+y",%{"y"=>40}) == false

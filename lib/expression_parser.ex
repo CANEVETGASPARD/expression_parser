@@ -4,7 +4,7 @@ defmodule ExpressionParser do
   """
 
   @doc """
-
+  take a char chain as input and return the list of char chain elements.
   """
   def tokenize(char_chain) do
     String.split(char_chain,~r{\s|\(|\)|\+|\-|\*|\/|=|!=|<=|<|>=|>}, trim: true, include_captures: true)
@@ -12,6 +12,9 @@ defmodule ExpressionParser do
     |> Enum.map(fn char -> identify_char(char) end)
   end
 
+  @doc """
+  take a char element as input and return the tuple made of its class atom and its value
+  """
   def identify_char(char) do
     cond do
       String.match?(char, ~r{^([0-9]*)$}) -> {:number, char}
@@ -24,6 +27,11 @@ defmodule ExpressionParser do
     end
   end
 
+  @doc """
+  take the tokenized list of the char chain and predifined nil object as input and return the tree of the given list.
+  """
+  def parse(token, tree \\nil)
+
   def parse([],tree) do
       tree
     end
@@ -34,6 +42,11 @@ defmodule ExpressionParser do
       _ -> parse(tail,add(tree,head))
     end
   end
+
+  @doc """
+  take the tree of the char chain and a char tuple as input and return the tree with the new element added
+  """
+  def add(tree,char_tuple_to_add)
 
   def add(nil, {char_class,char_value}) do
     {{char_class,char_value},nil,nil}
@@ -76,6 +89,11 @@ defmodule ExpressionParser do
     }
   }
 
+  @doc """
+  take the tree of the char chain and a char tuple to add as input and return a tuple {:error, error_message} if there is an error or a {nil,nil} tuple otherwise.
+  """
+  def check_validity(tree,char_to_add)
+
   def check_validity(_,{:illegal_char,_}) do
     {:error,"illegal char in the expression"}
   end
@@ -110,13 +128,21 @@ defmodule ExpressionParser do
     end
   end
 
+  @doc """
+  take the char chain and the variable table (if there is at least one variable in the equation) as input and return true if the equation is verified and false if it is not.
+  """
   def eval(char_chain, var_table \\ %{}) #function header with predefined empty var table
 
   def eval(char_chain,var_table) do
     tokenize(char_chain)
-    |> parse(nil)
+    |> parse
     |> eval_tree(var_table)
   end
+
+  @doc """
+  take the tree and the variable table as input and return true if the equation is verified and false if it is not.
+  """
+  def eval_tree(tree,var_table)
 
   def eval_tree({:number,value},_) do
     {parsed_float,_} =Float.parse(value)
@@ -131,6 +157,9 @@ defmodule ExpressionParser do
     do_expression({left_sub_tree,mid_element,right_sub_tree})
   end
 
+  @doc """
+  take the tree and the variable table as input and return a value if it is an operator or a boolean if it is a comparator
+  """
   def do_expression({left_tree_value,{_,mid_element_value},right_tree_value}) do
     cond do
       mid_element_value == "=" -> left_tree_value == right_tree_value
