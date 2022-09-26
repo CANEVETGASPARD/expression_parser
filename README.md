@@ -6,17 +6,17 @@ Project based on the first homework of the UE FIAB. This project is made of a to
 
 Elixir and git need to be installed to run and test the project.
 
-##project installation
+## project installation
 
 clone the repo on a dedicated folder using the command bellow:
 
 ```cmd
-https://github.com/CANEVETGASPARD/expression_parser.git
+project_loaction> git clone https://github.com/CANEVETGASPARD/expression_parser.git
 ```
 
 ## Compile and run 
 
-move to your command line interpreter to the project directory and run the following commands.
+Use your command line interpreter and move to the project directory and run the following commands.
 
 ```console
 project_loaction> mix compile
@@ -36,14 +36,14 @@ Then you will be able to try the tokenize, parse and eval function by following 
 
 **/!\ Disclaimer: As I said before, my parser function cannot handle parenthesis but my tokenize function do. Thus do not try to put parenthesis within char chain for eval and parse function but do not hesitate to do it for tokenize function.**
 
-- tokenize function take a char chain as input and renturn the list of char chain elements.
+- _tokenize_ function take a char chain as input and renturn the list of char chain elements.
 
 ```console
 iex(1)> ExpressionParser.tokenize("30 > 50") 
 [number: "30", comparator: ">", number: "50"]
 ```
 
-- parse function take the tokenized list of the char chain and nil object as input and return the tree of the given list.
+- _parse_ function take the tokenized list of the char chain and nil object as input and return the tree of the given list.
 
 ```console
 iex(2)> token = ExpressionParser.tokenize("30 > 50") 
@@ -52,7 +52,7 @@ iex(3)> token = ExpressionParser.parse(token,nil)
 {{:number, "30"}, {:comparator, ">"}, {:number, "50"}}
 ```
 
-- eval function take the char chain and the variable table (can be empty if there is no variable in the expression) as input and return true if the equation is verified and false if it is not.
+- _eval_ function take the char chain and the variable table (can be empty if there is no variable in the expression) as input and return true if the equation is verified and false if it is not.
 
 ```console
 iex(4)> token = ExpressionParser.eval("3<y",%{"y"=>5}) 
@@ -65,11 +65,11 @@ true
 
 ## Contributing
 
-If you want to contribute and fix my parenthesis project you can use mix test tool. To do so you just have to put your tests within the expression_parser_test.exs file and run the command below:
+If you want to contribute and fix my parenthesis problem, you can use mix test tool. To do so you just have to put your tests within the expression_parser_test.exs file and run the command below:
 
 ```console
-Project location> mix test
+project_loaction> mix test
 ```
 
-It will help you inspect the output of your new immplementation
+It will help you inspect the output of your new immplementations
 
