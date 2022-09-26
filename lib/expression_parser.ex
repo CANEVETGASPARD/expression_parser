@@ -25,6 +25,17 @@ defmodule ExpressionParser do
     end
   end
 
+  def parse([],tree) do
+      tree
+    end
+  def parse([head|tail],tree) do
+    {validity_atom,validity_message} = check_validity(tree,head)
+    case validity_atom do
+      :error -> raise(validity_message)
+      _ -> parse(tail,add(tree,head))
+    end
+  end
+
   def add(nil, {char_class,char_value}) do
     {{char_class,char_value},nil,nil}
   end
@@ -52,34 +63,25 @@ defmodule ExpressionParser do
     end
   end
 
-  def parse(tree,[]) do
-      tree
-    end
-  def parse(tree,[head|tail]) do
-    {validity_atom,validity_message} = check_validity(tree,head)
-    case validity_atom do
-      :error -> raise(validity_message)
-      _ -> parse(add(tree,head),tail)
-    end
-  end
-
-
   @error_message %{:on_start => %{
-      :comparator => "can't start expression with a comparator",
-      :operator => "can't start expression with an operator",
+    :comparator => "can't start expression with a comparator",
+    :operator => "can't start expression with an operator",
+     },
+  :after_variable_or_number => %{
+    :number => "can't put number just after number or variable",
+    :variable => "can't put variable just after number or variable",
     },
-    :after_variable_or_number => %{
-      :number => "can't put number just after number or variable",
-      :variable => "can't put variable just after number or variable",
-    },
-    :after_operator_or_comparator => %{
-      :comparator => "can't put comparator just after operator or comparator",
-      :operator => "can't put operator just after operator or comparator",
+  :after_operator_or_comparator => %{
+    :comparator => "can't put comparator just after operator or comparator",
+    :operator => "can't put operator just after operator or comparator",
     }
   }
 
   def check_validity(_,{:illegal_char,_}) do
     {:error,"illegal char in the expression"}
+  end
+  def check_validity({_,{:comparator,_},_},{:comparator,_}) do
+    {:error,"can't have two comparators in one expression"}
   end
   def check_validity(nil,{char_class,_}) do
     cond do
@@ -106,6 +108,40 @@ defmodule ExpressionParser do
         Map.has_key?(@error_message[:after_variable_or_number],char_class) -> {:error,@error_message[:after_variable_or_number][char_class]}
         true -> {nil,nil}
       end
+    end
+  end
+
+  def eval(char_chain,var_table) do
+    tokenize(char_chain)
+    |> parse(nil)
+    |> eval_tree(var_table)
+  end
+
+  def eval_tree({:number,value},_) do
+    {parsed_float,_} =Float.parse(value)
+    parsed_float
+  end
+  def eval_tree({:variable,value},var_table) do
+    var_table[value]
+  end
+  def eval_tree({left_tree,mid_element,right_tree},var_table) do
+    left_sub_tree = eval_tree(left_tree,var_table)
+    right_sub_tree = eval_tree(right_tree,var_table)
+    do_expression({left_sub_tree,mid_element,right_sub_tree})
+  end
+
+  def do_expression({left_tree_value,{_,mid_element_value},right_tree_value}) do
+    cond do
+      mid_element_value == "=" -> left_tree_value == right_tree_value
+      mid_element_value == "!=" -> left_tree_value != right_tree_value
+      mid_element_value == "<" -> left_tree_value < right_tree_value
+      mid_element_value == "<=" -> left_tree_value <= right_tree_value
+      mid_element_value == ">" -> left_tree_value > right_tree_value
+      mid_element_value == ">=" -> left_tree_value >= right_tree_value
+      mid_element_value == "+" -> left_tree_value + right_tree_value
+      mid_element_value == "-" -> left_tree_value - right_tree_value
+      mid_element_value == "*" -> left_tree_value * right_tree_value
+      mid_element_value == "/" -> left_tree_value / right_tree_value
     end
   end
 end
